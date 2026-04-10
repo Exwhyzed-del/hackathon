@@ -1,0 +1,34 @@
+#deepshield-floating-btn {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2147483647;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 50%;
+  background: #0f172a;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+#deepshield-floating-btn:hover {
+  transform: scale(1.05);
+}
+
+#deepshield-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  background: rgba(0, 0, 0, 0.18);
+  cursor: crosshair;
+}
+
+#deepshield-selection-box {
+  position: fixed;
+  border: 2px dashed #2563eb;
+  background: rgba(37, 99, 235, 0.15);
+  pointer-events: none;
+}

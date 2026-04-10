@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 250px;
+      padding: 15px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f172a;
+      color: white;
+      margin: 0;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 10px;
+    }
+    .logo {
+      font-size: 20px;
+    }
+    .title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #38bdf8;
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 8px;
+      background: #1e293b;
+    }
+    .menu-item:hover {
+      background: #334155;
+    }
+    .menu-item span {
+      font-size: 14px;
+    }
+    .footer {
+      font-size: 11px;
+      color: #64748b;
+      text-align: center;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="logo">🛡️</span>
+    <span class="title">DeepShield Unified</span>
+  </div>
+
+  <div class="menu-item" id="openSidePanel">
+    <span>🔍</span>
+    <span>Open News Guard</span>
+  </div>
+
+  <div class="menu-item" id="openDashboard">
+    <span>🌐</span>
+    <span>Open Web Dashboard</span>
+  </div>
+
+  <div class="footer">
+    AI protection for media & news
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

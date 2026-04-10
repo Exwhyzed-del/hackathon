@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "DeepShield Unified",
+  "version": "1.0.0",
+  "description": "Unified AI protection: Deepfake image detection and News authenticity verification.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs",
+    "sidePanel",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:5000/*",
+    "https://news.google.com/*",
+    "https://duckduckgo.com/*",
+    "https://html.duckduckgo.com/*",
+    "https://api.ocr.space/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles/content.css"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+  "action": {
+    "default_title": "Open DeepShield Unified",
+    "default_popup": "popup.html"
+  }
+}

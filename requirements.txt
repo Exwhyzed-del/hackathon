@@ -1,0 +1,9 @@
+flask
+flask-cors
+torch
+torchvision
+opencv-python
+numpy
+requests
+beautifulsoup4
+lxml
