@@ -59,7 +59,8 @@ chrome.runtime.onMessage.addListener(async (message) => {
   if (message.type === "RESULT_READY") {
     const session = await chrome.storage.local.get([
       "deepshield_result",
-      "deepshield_last_extracted_text"
+      "deepshield_last_extracted_text",
+      "deepshield_auto_verify"
     ]);
 
     if (session.deepshield_last_extracted_text) {
@@ -68,6 +69,12 @@ chrome.runtime.onMessage.addListener(async (message) => {
 
     if (session.deepshield_result) {
       renderResult(session.deepshield_result);
+    }
+
+    // Auto-verify if flagged
+    if (session.deepshield_auto_verify && newsInput.value.trim()) {
+      await chrome.storage.local.remove("deepshield_auto_verify");
+      runVerification(newsInput.value.trim());
     }
   }
 

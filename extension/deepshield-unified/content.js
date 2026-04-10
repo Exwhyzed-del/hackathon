@@ -83,6 +83,49 @@ function setupImageAnalysis() {
     });
 }
 
+// --- Safe Chrome API Wrappers ---
+function isContextValid() {
+    return !!chrome.runtime?.id;
+}
+
+async function safeSendMessage(msg) {
+    if (!isContextValid()) return { success: false, error: "Extension context invalidated" };
+    return new Promise((resolve) => {
+        try {
+            chrome.runtime.sendMessage(msg, (res) => {
+                if (chrome.runtime.lastError) {
+                    console.warn("DeepShield Message Error:", chrome.runtime.lastError.message);
+                    resolve({ success: false, error: chrome.runtime.lastError.message });
+                } else {
+                    resolve(res || { success: true });
+                }
+            });
+        } catch (err) {
+            console.error("DeepShield Message Exception:", err);
+            resolve({ success: false, error: err.message });
+        }
+    });
+}
+
+async function safeStorageSet(data) {
+    if (!isContextValid()) return;
+    try {
+        await chrome.storage.local.set(data);
+    } catch (err) {
+        console.warn("DeepShield Storage Set Error:", err);
+    }
+}
+
+async function safeStorageGet(keys) {
+    if (!isContextValid()) return {};
+    try {
+        return await chrome.storage.local.get(keys);
+    } catch (err) {
+        console.warn("DeepShield Storage Get Error:", err);
+        return {};
+    }
+}
+
 async function analyzeImage(img) {
     // Ignore small icons and base64 placeholders
     if (img.width < 150 || img.height < 150) return;
@@ -96,23 +139,21 @@ async function analyzeImage(img) {
     const badge = createBadge(img, "ANALYZING", 0, true);
 
     try {
-        const response = await fetch("http://127.0.0.1:5000/detect-image", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                image_url: img.src
-            })
+        // Use background for fetch to avoid CORS and context issues
+        const response = await safeSendMessage({ 
+            type: "DETECT_IMAGE_API", 
+            imageUrl: img.src 
         });
 
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response?.success) throw new Error(response?.error || "Detection failed");
         
-        const data = await response.json();
+        const data = response.data;
         updateBadge(badge, data.label, data.confidence);
     } catch (err) {
-        console.error("DeepShield Analysis Error:", err);
-        badge.remove(); // Remove badge if analysis fails
+        if (isContextValid()) {
+            console.error("DeepShield Analysis Error:", err);
+        }
+        if (badge) badge.remove(); // Remove badge if analysis fails
     }
 }
 
@@ -223,7 +264,7 @@ function onShieldClick(e) {
   e.preventDefault();
   e.stopPropagation();
   startScreenSelection();
-  chrome.runtime.sendMessage({ type: "OPEN_SIDE_PANEL" }, () => {});
+  safeSendMessage({ type: "OPEN_SIDE_PANEL" });
 }
 
 function startScreenSelection() {
@@ -296,7 +337,7 @@ async function onMouseUp(e) {
   }
 
   try {
-    await chrome.storage.local.set({
+    await safeStorageSet({
       deepshield_result: {
         verdict: { status: "PROCESSING", label: "Processing screenshot...", color: "orange" },
         input: "",
@@ -306,17 +347,17 @@ async function onMouseUp(e) {
         sources: []
       }
     });
-    chrome.runtime.sendMessage({ type: "RESULT_READY" });
+    await safeSendMessage({ type: "RESULT_READY" });
 
     let extractedText = extractTextFromDOM(rect);
     extractedText = cleanExtractedText(extractedText);
     extractedText = trimForVerification(extractedText);
 
     if (!extractedText || extractedText.length < 25) {
-      const capture = await sendMessageAsync({ type: "CAPTURE_VISIBLE_TAB" });
+      const capture = await safeSendMessage({ type: "CAPTURE_VISIBLE_TAB" });
       if (!capture?.success) throw new Error(capture?.error || "Screenshot capture failed");
       const croppedDataUrl = await cropScreenshot(capture.dataUrl, rect);
-      const ocrResponse = await sendMessageAsync({ type: "OCR_IMAGE", imageDataUrl: croppedDataUrl });
+      const ocrResponse = await safeSendMessage({ type: "OCR_IMAGE", imageDataUrl: croppedDataUrl });
       if (!ocrResponse?.success) throw new Error(ocrResponse?.error || "OCR failed");
       extractedText = cleanExtractedText(String(ocrResponse.text || ""));
       extractedText = trimForVerification(extractedText);
@@ -324,25 +365,30 @@ async function onMouseUp(e) {
 
     if (!extractedText || extractedText.length < 20) throw new Error("No readable text found in selected area");
 
-    await chrome.storage.local.set({
+    await safeStorageSet({
       deepshield_last_extracted_text: extractedText,
       deepshield_auto_verify: true
     });
-    chrome.runtime.sendMessage({ type: "SCREENSHOT_TEXT_READY", text: extractedText });
+    await safeSendMessage({ type: "SCREENSHOT_TEXT_READY", text: extractedText });
+    
+    // Auto-click verification if the side panel is already open or will be opened
+    await safeSendMessage({ type: "RESULT_READY" });
   } catch (error) {
-    console.error(error);
-    await chrome.storage.local.set({
-      deepshield_result: {
-        verdict: { status: "ERROR", label: "Screenshot processing failed", color: "red" },
-        input: "",
-        totalMatches: 0,
-        uniqueSourceCount: 0,
-        uniqueSources: [],
-        sources: [],
-        error: error.message || "Unknown error"
-      }
-    });
-    chrome.runtime.sendMessage({ type: "RESULT_READY" });
+    if (isContextValid()) {
+      console.error("DeepShield Selection Error:", error);
+      await safeStorageSet({
+        deepshield_result: {
+          verdict: { status: "ERROR", label: "Screenshot processing failed", color: "red" },
+          input: "",
+          totalMatches: 0,
+          uniqueSourceCount: 0,
+          uniqueSources: [],
+          sources: [],
+          error: error.message || "Unknown error"
+        }
+      });
+      await safeSendMessage({ type: "RESULT_READY" });
+    }
   } finally {
     cleanupSelection();
   }

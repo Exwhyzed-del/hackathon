@@ -75,7 +75,40 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   }
+
+  if (message.type === "DETECT_IMAGE_API") {
+    detectImage(message.imageUrl)
+      .then((data) => sendResponse({ success: true, data }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+
+  if (message.type === "RESULT_READY" || message.type === "SCREENSHOT_TEXT_READY") {
+    // Just a heartbeat/notify message, no complex async work
+    sendResponse({ success: true });
+    return false;
+  }
 });
+
+async function detectImage(imageUrl) {
+  try {
+    const response = await fetch("http://127.0.0.1:5000/detect-image", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        image_url: imageUrl
+      })
+    });
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.error("Background Detection Error:", err);
+    throw err;
+  }
+}
 
 function normalizeText(text) {
   return String(text || "")
