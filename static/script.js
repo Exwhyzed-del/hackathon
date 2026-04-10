@@ -146,87 +146,105 @@ function showSection(sectionId) {
 
 // MODAL TOGGLE
 function toggleExtensionModal() {
-    const modal = document.getElementById('extensionModal');
-    modal.classList.toggle('hidden');
+    document.getElementById('extensionModal').classList.toggle('hidden');
 }
 
-// NEWS VERIFICATION
+// NEWS GUARD ACTIONS
 function verifyNewsAction() {
-    const text = document.getElementById('newsTextInput').value.trim();
-    const resultDiv = document.getElementById('newsResult');
-    const verifyBtn = document.getElementById('verifyNewsBtn');
-
+    const input = document.getElementById("newsTextInput");
+    const btn = document.getElementById("verifyNewsBtn");
+    const result = document.getElementById("newsResult");
+    
+    const text = input.value.trim();
     if (!text) {
+        alert("Please enter some news text or a URL first.");
         return;
     }
 
-    verifyBtn.innerText = "Analyzing Sources...";
-    verifyBtn.disabled = true;
-    resultDiv.classList.remove('hidden');
-    resultDiv.innerHTML = "<p style='color: var(--primary);'>Cross-referencing global news databases...</p>";
+    btn.innerText = "Verifying coverage...";
+    btn.disabled = true;
+    result.classList.remove('hidden');
+    result.innerHTML = "<p style='color: var(--primary);'>Cross-referencing with global news databases...</p>";
 
     fetch("/analyze-news", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text })
+        body: JSON.stringify({ text })
     })
     .then(res => res.json())
     .then(data => {
-        verifyBtn.innerText = "Verify Authenticity";
-        verifyBtn.disabled = false;
+        btn.innerText = "Verify Authenticity";
+        btn.disabled = false;
         
         if (data.success) {
             renderNewsResult(data.result);
         } else {
-            resultDiv.innerHTML = `<p style='color: #ef4444;'>Error: ${data.error}</p>`;
+            result.innerHTML = `<p style='color: #ef4444;'>Error: ${data.error}</p>`;
         }
     })
     .catch(err => {
-        verifyBtn.innerText = "Verify Authenticity";
-        verifyBtn.disabled = false;
-        resultDiv.innerHTML = `<p style='color: #ef4444;'>Failed to connect to verification server.</p>`;
+        btn.innerText = "Verify Authenticity";
+        btn.disabled = false;
+        result.innerHTML = `<p style='color: #ef4444;'>Failed to connect to verification server.</p>`;
         console.error(err);
     });
 }
 
 function renderNewsResult(result) {
-    const resultDiv = document.getElementById('newsResult');
+    const newsResult = document.getElementById("newsResult");
     const verdict = result.verdict;
+    const color = verdict.color === 'red' ? '#ef4444' : (verdict.color === 'orange' ? '#f59e0b' : '#10b981');
     
-    let sourcesHtml = result.sources.map(s => `
-        <div class="source-item">
-            <a href="${s.url}" target="_blank">${s.title}</a>
-            <div class="meta">${s.source || s.domain} • ${s.publishedAt || 'Verified Source'}</div>
-        </div>
-    `).join('');
-
-    if (result.sources.length === 0) {
-        sourcesHtml = "<p style='color: var(--text-muted);'>No trusted news coverage found for this specific claim.</p>";
-    }
-
-    resultDiv.innerHTML = `
-        <div class="news-verdict verdict-${verdict.color}">
-            Verdict: ${verdict.label}
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-            <div class="card" style="text-align: center; padding: 20px;">
-                <div style="font-size: 28px; font-weight: 800; color: var(--primary);">${result.uniqueSourceCount}</div>
-                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Trusted Publishers</div>
-            </div>
-            <div class="card" style="text-align: center; padding: 20px;">
-                <div style="font-size: 28px; font-weight: 800; color: var(--primary);">${result.totalMatches}</div>
-                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Corroborating Links</div>
+    const publishers = result.uniqueSources.slice(0, 8).join(", ") || "No specific major publishers found";
+    
+    const links = result.sources.map(s => `
+        <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <a href="${s.url}" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 500; display: block; margin-bottom: 4px;">
+                ${s.title}
+            </a>
+            <div style="font-size: 12px; color: var(--text-muted);">
+                ${s.source || s.domain} ${s.publishedAt ? '• ' + s.publishedAt : ''}
             </div>
         </div>
-        <h4 style="margin-bottom: 16px;">Verified Coverage:</h4>
-        <div class="source-list">
-            ${sourcesHtml}
+    `).join("");
+
+    newsResult.innerHTML = `
+        <div style="padding: 24px; border-radius: 12px; border: 2px solid ${color}; background: rgba(255,255,255,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: ${color};">${verdict.label}</h3>
+                <div style="font-size: 14px; color: var(--text-muted);">${result.analyzedFromUrl ? 'URL analyzed' : 'Text analyzed'}</div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                <div style="padding: 16px; border-radius: 8px; background: rgba(255,255,255,0.05);">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Trusted Sources</div>
+                    <div style="font-size: 24px; font-weight: 800;">${result.uniqueSourceCount}</div>
+                </div>
+                <div style="padding: 16px; border-radius: 8px; background: rgba(255,255,255,0.05);">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Search Matches</div>
+                    <div style="font-size: 24px; font-weight: 800;">${result.totalMatches}</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <h5 style="margin: 0 0 8px 0; color: var(--text-muted); text-transform: uppercase; font-size: 11px;">Major Coverage</h5>
+                <p style="margin: 0; font-size: 14px;">${publishers}</p>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h5 style="margin: 0 0 12px 0; color: var(--text-muted); text-transform: uppercase; font-size: 11px;">Verification Links</h5>
+                <div style="max-height: 300px; overflow-y: auto; padding-right: 8px;">
+                    ${links || '<p style="font-size: 14px; color: var(--text-muted);">No direct coverage links found.</p>'}
+                </div>
+            </div>
         </div>
     `;
 }
 
 function clearNews() {
-    document.getElementById('newsTextInput').value = "";
-    document.getElementById('newsResult').classList.add('hidden');
-    document.getElementById('newsResult').innerHTML = "";
+    document.getElementById("newsTextInput").value = "";
+    document.getElementById("newsResult").classList.add('hidden');
 }
+
+// Start chart on load
+window.onload = updateChart;

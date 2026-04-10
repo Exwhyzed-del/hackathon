@@ -109,9 +109,7 @@ button {
   color: #2563eb;
   text-decoration: none;
 }
-.error {
-  color: #b91c1c;
-}
+
 .result-header {
   display: flex;
   justify-content: space-between;

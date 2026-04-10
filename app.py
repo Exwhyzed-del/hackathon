@@ -78,6 +78,7 @@ def upload():
         print(e)
         return jsonify({"label": "ERROR", "confidence": 0})
 
+
 # =========================
 # RUN SERVER
 # =========================
