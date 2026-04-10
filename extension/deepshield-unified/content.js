@@ -85,7 +85,11 @@ function setupImageAnalysis() {
 
 // --- Safe Chrome API Wrappers ---
 function isContextValid() {
-    return !!chrome.runtime?.id;
+    try {
+        return !!(chrome.runtime && chrome.runtime.id);
+    } catch {
+        return false;
+    }
 }
 
 async function safeSendMessage(msg) {
@@ -304,17 +308,22 @@ function onMouseDown(e) {
   updateSelectionBox(startX, startY, 0, 0);
 }
 
+let moveRafId = null;
 function onMouseMove(e) {
   if (!isSelecting) return;
   e.preventDefault();
   e.stopPropagation();
-  const currentX = e.clientX;
-  const currentY = e.clientY;
-  const x = Math.min(startX, currentX);
-  const y = Math.min(startY, currentY);
-  const width = Math.abs(currentX - startX);
-  const height = Math.abs(currentY - startY);
-  updateSelectionBox(x, y, width, height);
+
+  if (moveRafId) cancelAnimationFrame(moveRafId);
+  moveRafId = requestAnimationFrame(() => {
+    const currentX = e.clientX;
+    const currentY = e.clientY;
+    const x = Math.min(startX, currentX);
+    const y = Math.min(startY, currentY);
+    const width = Math.abs(currentX - startX);
+    const height = Math.abs(currentY - startY);
+    updateSelectionBox(x, y, width, height);
+  });
 }
 
 async function onMouseUp(e) {
@@ -354,6 +363,8 @@ async function onMouseUp(e) {
     extractedText = trimForVerification(extractedText);
 
     if (!extractedText || extractedText.length < 25) {
+      // Small delay to ensure any viewport transitions (like sidepanel opening) are accounted for
+      await new Promise(r => setTimeout(r, 150));
       const capture = await safeSendMessage({ type: "CAPTURE_VISIBLE_TAB" });
       if (!capture?.success) throw new Error(capture?.error || "Screenshot capture failed");
       const croppedDataUrl = await cropScreenshot(capture.dataUrl, rect);
@@ -369,25 +380,30 @@ async function onMouseUp(e) {
       deepshield_last_extracted_text: extractedText,
       deepshield_auto_verify: true
     });
-    await safeSendMessage({ type: "SCREENSHOT_TEXT_READY", text: extractedText });
     
-    // Auto-click verification if the side panel is already open or will be opened
-    await safeSendMessage({ type: "RESULT_READY" });
+    // Only send the text ready message, sidepanel will handle the rest
+    await safeSendMessage({ type: "SCREENSHOT_TEXT_READY", text: extractedText });
   } catch (error) {
+    console.warn("DeepShield Selection Note:", error.message || error);
+    
     if (isContextValid()) {
-      console.error("DeepShield Selection Error:", error);
-      await safeStorageSet({
-        deepshield_result: {
-          verdict: { status: "ERROR", label: "Screenshot processing failed", color: "red" },
-          input: "",
-          totalMatches: 0,
-          uniqueSourceCount: 0,
-          uniqueSources: [],
-          sources: [],
-          error: error.message || "Unknown error"
-        }
-      });
-      await safeSendMessage({ type: "RESULT_READY" });
+      try {
+        await safeStorageSet({
+          deepshield_result: {
+            verdict: { status: "ERROR", label: "⚠️ Selection failed", color: "orange" },
+            input: "",
+            totalMatches: 0,
+            uniqueSourceCount: 0,
+            uniqueSources: [],
+            sources: [],
+            error: error.message || "Could not extract text from this area"
+          }
+        });
+        // Notify sidepanel that an error occurred and result is ready to display
+        await safeSendMessage({ type: "RESULT_READY" });
+      } catch (innerErr) {
+        // Context likely invalidated during error handling
+      }
     }
   } finally {
     cleanupSelection();
@@ -403,19 +419,31 @@ function updateSelectionBox(x, y, width, height) {
 }
 
 function extractTextFromDOM(rect) {
-  const elements = document.querySelectorAll("p, h1, h2, h3, h4, h5, h6, span, div, li, article");
+  // Use a more inclusive check for elements
+  const elements = document.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li, article, span, div");
   let text = "";
-  elements.forEach(el => {
+  
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i];
+    if (el.children.length > 0 && !["SPAN", "A"].includes(el.tagName)) continue; // Only pick leaf-ish nodes
+    
+    const content = el.innerText.trim();
+    if (!content) continue;
+    
     const elRect = el.getBoundingClientRect();
-    if (
-      elRect.top >= rect.y &&
-      elRect.left >= rect.x &&
-      elRect.bottom <= rect.y + rect.height &&
-      elRect.right <= rect.x + rect.width
-    ) {
-      text += el.innerText + " ";
+    // Check for any intersection
+    const overlap = !(
+      elRect.right < rect.x || 
+      elRect.left > rect.x + rect.width || 
+      elRect.bottom < rect.y || 
+      elRect.top > rect.y + rect.height
+    );
+
+    if (overlap) {
+      text += content + " ";
     }
-  });
+    if (text.length > 2000) break;
+  }
   return text;
 }
 
@@ -433,21 +461,30 @@ function trimForVerification(text) {
 }
 
 async function cropScreenshot(dataUrl, rect) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(
-        img,
-        rect.x * dpr, rect.y * dpr, rect.width * dpr, rect.height * dpr,
-        0, 0, rect.width * dpr, rect.height * dpr
-      );
-      resolve(canvas.toDataURL("image/png"));
+      try {
+        const canvas = document.createElement("canvas");
+        const dpr = window.devicePixelRatio || 1;
+        
+        // The dataUrl is the capture of the visible viewport, already scaled by DPR
+        // The rect coordinates are in CSS pixels, so they need scaling to match the capture
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(
+          img,
+          rect.x * dpr, rect.y * dpr, rect.width * dpr, rect.height * dpr,
+          0, 0, rect.width * dpr, rect.height * dpr
+        );
+        resolve(canvas.toDataURL("image/png"));
+      } catch (e) {
+        reject(e);
+      }
     };
+    img.onerror = () => reject(new Error("Failed to load screenshot for cropping"));
     img.src = dataUrl;
   });
 }

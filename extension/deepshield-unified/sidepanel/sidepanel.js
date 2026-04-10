@@ -55,27 +55,45 @@ window.addEventListener("unload", async () => {
   ]);
 });
 
-chrome.runtime.onMessage.addListener(async (message) => {
+// Listen for storage changes to auto-fill text
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes.deepshield_last_extracted_text) {
+    const newText = changes.deepshield_last_extracted_text.newValue;
+    if (newText && newText !== newsInput.value) {
+      newsInput.value = newText;
+      // Also auto-verify if flagged
+      chrome.storage.local.get(["deepshield_auto_verify"], (res) => {
+        if (res.deepshield_auto_verify) {
+          chrome.storage.local.remove("deepshield_auto_verify");
+          runVerification(newText);
+        }
+      });
+    }
+  }
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "RESULT_READY") {
-    const session = await chrome.storage.local.get([
+    chrome.storage.local.get([
       "deepshield_result",
       "deepshield_last_extracted_text",
       "deepshield_auto_verify"
-    ]);
+    ], (session) => {
+      if (session.deepshield_last_extracted_text) {
+        newsInput.value = session.deepshield_last_extracted_text;
+      }
 
-    if (session.deepshield_last_extracted_text) {
-      newsInput.value = session.deepshield_last_extracted_text;
-    }
+      if (session.deepshield_result) {
+        renderResult(session.deepshield_result);
+      }
 
-    if (session.deepshield_result) {
-      renderResult(session.deepshield_result);
-    }
-
-    // Auto-verify if flagged
-    if (session.deepshield_auto_verify && newsInput.value.trim()) {
-      await chrome.storage.local.remove("deepshield_auto_verify");
-      runVerification(newsInput.value.trim());
-    }
+      // Auto-verify if flagged
+      if (session.deepshield_auto_verify && newsInput.value.trim()) {
+        chrome.storage.local.remove("deepshield_auto_verify");
+        runVerification(newsInput.value.trim());
+      }
+    });
+    sendResponse({ success: true });
   }
 
   if (message.type === "SCREENSHOT_TEXT_READY") {
@@ -83,11 +101,9 @@ chrome.runtime.onMessage.addListener(async (message) => {
 
     if (text) {
       newsInput.value = text;
-      await chrome.storage.local.set({
-        deepshield_last_extracted_text: text
-      });
       runVerification(text);
     }
+    sendResponse({ success: true });
   }
 });
 

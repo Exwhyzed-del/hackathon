@@ -50,6 +50,7 @@ def is_news_like_domain(domain):
     
     blocked = [
         "play.google.com", "apkpure.com", "apkcombo.com", "uptodown.com",
+        "apkmirror.com", "happymod.com", "softonic.com", "cnet.com",
         "youtube.com", "youtu.be", "reddit.com", "instagram.com",
         "facebook.com", "x.com", "twitter.com", "tiktok.com",
         "pinterest.com", "quora.com", "medium.com", "linkedin.com", "law360.com"
@@ -153,12 +154,10 @@ def score_result(result, original_text):
 
 def classify_by_source_count(count):
     if count == 0:
-        return {"status": "FAKE", "label": "Fake / No matching coverage found", "color": "red"}
+        return {"status": "FAKE", "label": "❌ Fake / No matching coverage found", "color": "red"}
     if count < 4:
-        return {"status": "SUSPICIOUS", "label": "Suspicious / Very low corroboration", "color": "orange"}
-    if count < 10:
-        return {"status": "SUSPICIOUS", "label": "Suspicious / Not enough trusted coverage", "color": "orange"}
-    return {"status": "REAL", "label": "Likely real / Multiple independent news sources found", "color": "green"}
+        return {"status": "SUSPICIOUS", "label": "⚠️ Suspicious / Few sources found", "color": "orange"}
+    return {"status": "REAL", "label": "✅ Real / Multiple trusted sources found", "color": "green"}
 
 def search_google_news_rss_one_url(rss_url):
     try:

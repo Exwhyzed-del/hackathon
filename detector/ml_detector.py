@@ -74,10 +74,12 @@ def predict_image(input_data):
 
         local_confidence = max(real_prob, fake_prob, filtered_prob)
 
-        # 2. API FALLBACK (Only for URLs and if local confidence is low)
-        if image_url and label == "REAL" and local_confidence < 0.8:
+        # 2. API FALLBACK (Only for URLs and if local model is not very confident)
+        # Optimized: Only call API if local confidence is low (< 0.9) AND it's not already clearly FAKE
+        if image_url and label == "REAL" and local_confidence < 0.9:
             try:
-                api_resp = requests.post(API_URL, headers=HEADERS, json={"inputs": image_url}, timeout=5)
+                # Reduced timeout for faster response
+                api_resp = requests.post(API_URL, headers=HEADERS, json={"inputs": image_url}, timeout=3)
                 api_data = api_resp.json()
                 
                 if isinstance(api_data, list):
