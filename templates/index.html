@@ -1,132 +1,377 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DeepShield AI • Integrated Protection</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepShield AI • Integrated Protection</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <div class="bg-grid"></div>
+    <div class="bg-orbs">
+        <div class="orb orb1"></div>
+        <div class="orb orb2"></div>
+        <div class="orb orb3"></div>
+    </div>
 
-<div class="layout">
+    <!-- LOGIN PAGE -->
+    <div class="page" id="loginPage">
+        <div class="auth-shell">
+            <div class="shield-hero">
+                <div class="shield-rings">
+                    <div class="ring ring1"></div>
+                    <div class="ring ring2"></div>
+                    <div class="ring ring3"></div>
+                </div>
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        <h2>🛡 <span>DS AI</span></h2>
-        <div class="menu">
-            <div class="item active" onclick="showSection('dashboard')">
-                <span class="icon">📊</span>
-                <span>Dashboard</span>
+                <svg class="shield-svg" width="110" height="130" viewBox="0 0 100 120" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#00f5ff"/>
+                            <stop offset="50%" style="stop-color:#6c2bd9"/>
+                            <stop offset="100%" style="stop-color:#00ff88"/>
+                        </linearGradient>
+                        <filter id="shieldGlow">
+                            <feGaussianBlur stdDeviation="3" result="blur"/>
+                            <feMerge>
+                                <feMergeNode in="blur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <path d="M50 8 L88 22 L88 58 C88 80 70 100 50 112 C30 100 12 80 12 58 L12 22 Z"
+                          fill="url(#shieldGradient)" opacity="0.15" filter="url(#shieldGlow)"/>
+                    <path d="M50 8 L88 22 L88 58 C88 80 70 100 50 112 C30 100 12 80 12 58 L12 22 Z"
+                          fill="none" stroke="url(#shieldGradient)" stroke-width="2"/>
+                    <path d="M50 25 L73 34 L73 57 C73 72 63 84 50 92 C37 84 27 72 27 57 L27 34 Z"
+                          fill="url(#shieldGradient)" opacity="0.1"/>
+                    <polyline points="36,58 46,68 66,45"
+                              fill="none"
+                              stroke="#00f5ff"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              filter="url(#shieldGlow)"/>
+                </svg>
             </div>
-            <div class="item" onclick="showSection('news')">
-                <span class="icon">🛡</span>
-                <span>News Guard</span>
-            </div>
-            <div class="item" onclick="toggleExtensionModal()">
-                <span class="icon">🧩</span>
-                <span>Add to Chrome</span>
+
+            <div class="brand-title">DEEPSHIELD</div>
+            <div class="brand-sub">AI Deepfake Detection Platform</div>
+
+            <div class="login-card">
+                <div class="scan-line"></div>
+
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('signin')">Sign In</button>
+                    <button class="tab-btn" onclick="switchTab('signup')">Get Started</button>
+                </div>
+
+                <div id="signinForm">
+                    <div class="field">
+                        <label>Email Address</label>
+                        <input type="email" id="signinEmail" placeholder="operator@deepshield.ai">
+                    </div>
+                    <div class="field">
+                        <label>Password</label>
+                        <input type="password" id="signinPassword" placeholder="••••••••••••">
+                    </div>
+                    <div class="auth-row">
+                        <label class="remember-label">
+                            <input type="checkbox">
+                            <span>Remember device</span>
+                        </label>
+                        <span class="auth-link">Secure local access</span>
+                    </div>
+                    <button class="btn-primary" onclick="launch()">INITIATE ACCESS</button>
+                </div>
+
+                <div id="signupForm" class="hidden-auth">
+                    <div class="field">
+                        <label>Full Name</label>
+                        <input type="text" placeholder="John Operator">
+                    </div>
+                    <div class="field">
+                        <label>Email Address</label>
+                        <input type="email" placeholder="you@company.com">
+                    </div>
+                    <div class="field">
+                        <label>Organization</label>
+                        <input type="text" placeholder="Your Organization">
+                    </div>
+                    <div class="field">
+                        <label>Password</label>
+                        <input type="password" placeholder="Create strong password">
+                    </div>
+                    <button class="btn-primary" onclick="launch()">DEPLOY SHIELD</button>
+                </div>
+
+                <div class="divider">OR CONTINUE WITH</div>
+
+                <div class="social-btns">
+                    <button class="social-btn" onclick="launch()">🔷 Microsoft</button>
+                    <button class="social-btn" onclick="launch()">🔴 Google</button>
+                </div>
+
+                <p class="auth-footnote">
+                    Protected by AES-256 · Secure Local Workflow · Browser-integrated scanning
+                </p>
             </div>
         </div>
     </div>
 
-    <!-- MAIN CONTENT WRAPPER -->
-    <div class="main-wrapper">
-        
-        <!-- DASHBOARD SECTION -->
-        <div class="main" id="dashboardSection">
-            <h1>Deepfake Detection Dashboard</h1>
-
-            <!-- UPLOAD -->
-            <div class="card upload-card" id="dropArea">
-                <div style="font-size: 40px; margin-bottom: 10px;">📸</div>
-                <p>Drop images here to analyze</p>
-                <input type="file" id="fileInput" multiple hidden>
-                <button onclick="openFile()">Select Files</button>
+    <!-- DASHBOARD PAGE -->
+    <div class="page hidden" id="dashPage">
+        <div class="sidebar">
+            <div class="sidebar-logo">
+                <div class="name">DEEPSHIELD</div>
+                <div class="version">Website Console · Secure</div>
             </div>
 
-            <!-- DASHBOARD PANEL -->
-            <div class="card stats">
-                <h3>System Real-time Stats</h3>
-                <p>Verified Real <span id="realCount">0</span></p>
-                <p>AI Generated <span id="fakeCount">0</span></p>
-                <p>Modified/Filtered <span id="filteredCount">0</span></p>
-            </div>
+            <div class="sidebar-scroll">
+                <div class="nav-section">
+                    <div class="nav-label">Core</div>
 
-            <!-- CHART -->
-            <div class="card chart-box">
-                <h3>Visual Distribution</h3>
-                <canvas id="chart"></canvas>
-            </div>
+                    <div class="nav-item active" data-target="dashboardSection" onclick="showSection('dashboardSection', this)">
+                        <span class="nav-icon">📊</span>
+                        <span>Overview</span>
+                    </div>
 
-            <!-- PREVIEW & RESULTS -->
-            <div id="previewContainer" class="preview-grid"></div>
-            <div id="results"></div>
-        </div>
+                    <div class="nav-item" data-target="newsSection" onclick="showSection('newsSection', this)">
+                        <span class="nav-icon">🛡️</span>
+                        <span>News Guard</span>
+                    </div>
 
-        <!-- NEWS GUARD SECTION -->
-        <div class="main hidden" id="newsSection">
-            <h1>VeriShield News Guard</h1>
-            
-            <div class="card full-width">
-                <h3>Verify News Authenticity</h3>
-                <p style="color: var(--text-muted); margin-bottom: 20px;">Paste news text, a viral claim, or a direct URL to cross-reference with trusted global news sources.</p>
-                <textarea id="newsTextInput" placeholder="Enter content to verify..."></textarea>
-                <div style="margin-top: 24px; display: flex; gap: 12px;">
-                    <button onclick="verifyNewsAction()" id="verifyNewsBtn">Verify Authenticity</button>
-                    <button onclick="clearNews()" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--glass-border);">Clear Input</button>
+                    <div class="nav-item" onclick="toggleExtensionModal()">
+                        <span class="nav-icon">🧩</span>
+                        <span>Add to Chrome</span>
+                    </div>
                 </div>
             </div>
 
-            <div id="newsResult" class="card full-width hidden">
-                <!-- News results injected here -->
+            <div class="sidebar-bottom">
+                <div class="user-card">
+                    <div class="avatar">DS</div>
+                    <div class="user-info">
+                        <div class="name">DeepShield User</div>
+                        <div class="role">Website Access</div>
+                    </div>
+                </div>
+
+                <div class="nav-item signout-item" onclick="logout()">
+                    <span class="nav-icon">↩</span>
+                    <span>Sign Out</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-wrapper">
+            <!-- DASHBOARD -->
+            <div class="content-section" id="dashboardSection">
+                <div class="topbar">
+                    <div>
+                        <div class="page-title">Security <span>Overview</span></div>
+                        <div class="page-subtitle">Real-time visual deepfake detection from your existing backend</div>
+                    </div>
+                    <div class="topbar-right">
+                        <div class="status-pill">
+                            <div class="status-dot"></div>
+                            Shield Active
+                        </div>
+                        <div class="clock" id="clock"></div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-label">Verified Real</div>
+                        <div class="stat-value" id="realCountCard">0</div>
+                        <div class="stat-meta">Authentic detections</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">⚠️</div>
+                        <div class="stat-label">AI Generated</div>
+                        <div class="stat-value" id="fakeCountCard">0</div>
+                        <div class="stat-meta">Detected synthetic media</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">🎨</div>
+                        <div class="stat-label">Modified/Filtered</div>
+                        <div class="stat-value" id="filteredCountCard">0</div>
+                        <div class="stat-meta">Manipulated or edited media</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">⚡</div>
+                        <div class="stat-label">Total Scans</div>
+                        <div class="stat-value" id="totalScansCard">0</div>
+                        <div class="stat-meta">Session analysis count</div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="card upload-zone-card">
+                        <div class="section-head">
+                            <div>
+                                <div class="section-title">Image Detection</div>
+                                <div class="section-sub">Upload one or more images for analysis</div>
+                            </div>
+                        </div>
+
+                        <div class="upload-zone" id="dropArea">
+                            <div class="upload-icon">📸</div>
+                            <div class="upload-text">Drop images here to analyze</div>
+                            <div class="upload-sub">Supports your current `/upload` backend route</div>
+                            <input type="file" id="fileInput" multiple hidden accept="image/*">
+                            <button class="action-btn" onclick="openFile()">Select Files</button>
+
+                            <div class="format-badges">
+                                <span class="fmt-badge">JPG</span>
+                                <span class="fmt-badge">PNG</span>
+                                <span class="fmt-badge">WEBP</span>
+                                <span class="fmt-badge">Batch Upload</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card chart-card">
+                        <div class="section-title">Visual Distribution</div>
+                        <div class="section-sub">Live session breakdown from your existing prediction flow</div>
+                        <div class="chart-holder">
+                            <canvas id="chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analysis-layout">
+                    <div class="card stats-card">
+                        <div class="section-title">System Real-time Stats</div>
+                        <div class="section-sub">Auto-updated as each upload is processed</div>
+
+                        <div class="stats-list">
+                            <div class="stats-row">
+                                <span>Verified Real</span>
+                                <strong id="realCount">0</strong>
+                            </div>
+                            <div class="stats-row">
+                                <span>AI Generated</span>
+                                <strong id="fakeCount">0</strong>
+                            </div>
+                            <div class="stats-row">
+                                <span>Modified/Filtered</span>
+                                <strong id="filteredCount">0</strong>
+                            </div>
+                            <div class="stats-row">
+                                <span>Total Files Scanned</span>
+                                <strong id="totalCount">0</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card feed-card">
+                        <div class="section-title">Detection Activity</div>
+                        <div class="section-sub">Live session events</div>
+                        <div id="activityFeed" class="feed-list">
+                            <div class="feed-empty">No analysis yet. Upload images to begin.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card full-span-card">
+                    <div class="section-title">Preview Queue</div>
+                    <div class="section-sub">Uploaded images appear here before and during analysis</div>
+                    <div id="previewContainer" class="preview-grid"></div>
+                </div>
+
+                <div class="card full-span-card">
+                    <div class="section-title">Detection Results</div>
+                    <div class="section-sub">Confidence and labels are populated from your unchanged backend</div>
+                    <div id="results" class="results-grid"></div>
+                </div>
+            </div>
+
+            <!-- NEWS -->
+            <div class="content-section hidden-section" id="newsSection">
+                <div class="topbar">
+                    <div>
+                        <div class="page-title">VeriShield <span>News Guard</span></div>
+                        <div class="page-subtitle">Cross-check claims and URLs with your current news verification backend</div>
+                    </div>
+                    <div class="topbar-right">
+                        <div class="status-pill amber-pill">
+                            <div class="status-dot amber-dot"></div>
+                            Verification Ready
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card full-span-card">
+                    <div class="section-title">Verify News Authenticity</div>
+                    <div class="section-sub">
+                        Paste a viral claim, full news text, or direct URL. This still uses your current
+                        <code>/analyze-news</code> route.
+                    </div>
+
+                    <textarea id="newsTextInput" placeholder="Enter content to verify..."></textarea>
+
+                    <div class="news-actions">
+                        <button class="action-btn" onclick="verifyNewsAction()" id="verifyNewsBtn">Verify Authenticity</button>
+                        <button class="secondary-btn" onclick="clearNews()">Clear Input</button>
+                    </div>
+                </div>
+
+                <div id="newsResult" class="card full-span-card hidden-section"></div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- EXTENSION INSTALL MODAL -->
-<div id="extensionModal" class="modal hidden">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Add DeepShield to Chrome</h3>
-            <div class="close-modal" onclick="toggleExtensionModal()">×</div>
-        </div>
-        <div class="step-list">
-            <div class="step">
-                <div class="step-num">1</div>
-                <div class="step-text">
-                    <h4>Enable Developer Mode</h4>
-                    <p>Open <code>chrome://extensions/</code> and toggle 'Developer mode' in the top right.</p>
+    <!-- EXTENSION MODAL -->
+    <div id="extensionModal" class="modal hidden-section">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add DeepShield to Chrome</h3>
+                <div class="close-modal" onclick="toggleExtensionModal()">×</div>
+            </div>
+
+            <div class="step-list">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        <h4>Enable Developer Mode</h4>
+                        <p>Open <code>chrome://extensions/</code> and enable Developer mode in the top right.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-text">
+                        <h4>Load Unpacked</h4>
+                        <p>Click Load unpacked and select the <code>extension/deepshield-unified</code> folder.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-text">
+                        <h4>Start Browsing</h4>
+                        <p>Open Instagram or any supported news site to use the extension without changing the website backend.</p>
+                    </div>
                 </div>
             </div>
-            <div class="step">
-                <div class="step-num">2</div>
-                <div class="step-text">
-                    <h4>Load Unpacked</h4>
-                    <p>Click 'Load unpacked' and select the <code>extension/deepshield-unified</code> folder.</p>
-                </div>
+
+            <div class="modal-actions">
+                <button class="action-btn full-btn" onclick="toggleExtensionModal()">Got it!</button>
             </div>
-            <div class="step">
-                <div class="step-num">3</div>
-                <div class="step-text">
-                    <h4>Start Browsing</h4>
-                    <p>Open Instagram or any news site to see real-time protection in action!</p>
-                </div>
-            </div>
-        </div>
-        <div style="margin-top: 32px; text-align: center;">
-            <button onclick="toggleExtensionModal()" style="width: 100%;">Got it!</button>
         </div>
     </div>
-</div>
 
-<script src="{{ url_for('static', filename='script.js') }}"></script>
-
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

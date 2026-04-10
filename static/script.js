@@ -1,93 +1,238 @@
 var fileInput = document.getElementById("fileInput");
 var preview = document.getElementById("previewContainer");
 var results = document.getElementById("results");
+var dropArea = document.getElementById("dropArea");
 
 var realCount = 0;
 var fakeCount = 0;
 var filteredCount = 0;
+var totalCount = 0;
+var chart = null;
 
-// OPEN FILE
+// LOGIN / DASHBOARD FLOW
+function switchTab(mode) {
+    var signinForm = document.getElementById("signinForm");
+    var signupForm = document.getElementById("signupForm");
+    var buttons = document.querySelectorAll(".tab-btn");
+
+    buttons.forEach(function (btn) {
+        btn.classList.remove("active");
+    });
+
+    if (mode === "signin") {
+        signinForm.style.display = "block";
+        signupForm.style.display = "none";
+        buttons[0].classList.add("active");
+    } else {
+        signinForm.style.display = "none";
+        signupForm.style.display = "block";
+        buttons[1].classList.add("active");
+    }
+}
+
+function launch() {
+    document.getElementById("loginPage").classList.add("hidden");
+    document.getElementById("dashPage").classList.remove("hidden");
+    updateClock();
+    setInterval(updateClock, 1000);
+}
+
+function logout() {
+    document.getElementById("dashPage").classList.add("hidden");
+    document.getElementById("loginPage").classList.remove("hidden");
+}
+
+function updateClock() {
+    var clock = document.getElementById("clock");
+    if (!clock) return;
+
+    var now = new Date();
+    clock.textContent = now.toLocaleString();
+}
+
+// SECTION SWITCHING
+function showSection(sectionId, clickedItem) {
+    document.getElementById("dashboardSection").classList.add("hidden-section");
+    document.getElementById("newsSection").classList.add("hidden-section");
+
+    document.querySelectorAll(".nav-item").forEach(function (item) {
+        item.classList.remove("active");
+    });
+
+    document.getElementById(sectionId).classList.remove("hidden-section");
+
+    if (clickedItem) {
+        clickedItem.classList.add("active");
+    } else {
+        var fallback = document.querySelector('.nav-item[data-target="' + sectionId + '"]');
+        if (fallback) fallback.classList.add("active");
+    }
+}
+
+// MODAL
+function toggleExtensionModal() {
+    document.getElementById("extensionModal").classList.toggle("hidden-section");
+}
+
+// FILE INPUT
 function openFile() {
     fileInput.click();
 }
 
-// HANDLE FILE SELECT
-fileInput.addEventListener("change", function () {
-    preview.innerHTML = "";
-    results.innerHTML = "";
+if (fileInput) {
+    fileInput.addEventListener("change", function () {
+        handleFiles(Array.from(fileInput.files || []));
+    });
+}
 
-    Array.from(fileInput.files).forEach(file => {
+// DRAG AND DROP
+if (dropArea) {
+    ["dragenter", "dragover"].forEach(function (eventName) {
+        dropArea.addEventListener(eventName, function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropArea.classList.add("dragover");
+        });
+    });
+
+    ["dragleave", "drop"].forEach(function (eventName) {
+        dropArea.addEventListener(eventName, function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropArea.classList.remove("dragover");
+        });
+    });
+
+    dropArea.addEventListener("drop", function (e) {
+        var files = Array.from(e.dataTransfer.files || []).filter(function (file) {
+            return file.type.startsWith("image/");
+        });
+        handleFiles(files);
+    });
+}
+
+function handleFiles(files) {
+    if (!files.length) return;
+
+    files.forEach(function (file) {
         uploadFile(file);
     });
-});
 
-// UPLOAD + ANALYZE
+    if (fileInput) {
+        fileInput.value = "";
+    }
+}
+
 function uploadFile(file) {
-
     var formData = new FormData();
     formData.append("file", file);
 
-    var imgContainer = document.createElement("div");
-    imgContainer.style.position = "relative";
-    
-    var img = document.createElement("img");
-    img.src = URL.createObjectURL(file);
-    imgContainer.appendChild(img);
-    preview.appendChild(imgContainer);
+    addPreview(file);
+    addFeedItem("info", "Queued for analysis", file.name);
 
     fetch("/upload", {
         method: "POST",
         body: formData
     })
-    .then(res => res.json())
-    .then(data => showResult(data))
-    .catch(err => console.log(err));
+    .then(function (res) {
+        return res.json();
+    })
+    .then(function (data) {
+        showResult(data, file.name);
+    })
+    .catch(function (err) {
+        console.error(err);
+        showResult({ label: "ERROR", confidence: 0 }, file.name);
+    });
 }
 
-// SHOW RESULT
-function showResult(data) {
+function addPreview(file) {
+    var wrapper = document.createElement("div");
+    wrapper.className = "preview-item";
 
-    var label = data.label.toUpperCase();
-    var colorClass = data.label.toLowerCase();
+    var img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    img.alt = file.name;
 
-    if (colorClass === "real") realCount++;
-    if (colorClass === "fake") fakeCount++;
-    if (colorClass === "filtered") filteredCount++;
+    var caption = document.createElement("div");
+    caption.className = "preview-caption";
+    caption.textContent = file.name;
+
+    wrapper.appendChild(img);
+    wrapper.appendChild(caption);
+    preview.appendChild(wrapper);
+}
+
+function normalizeLabel(label) {
+    if (!label) return "error";
+
+    var value = String(label).trim().toLowerCase();
+
+    if (value === "real") return "real";
+    if (value === "fake") return "fake";
+    if (value === "filtered") return "filtered";
+    return "error";
+}
+
+function showResult(data, fileName) {
+    var normalized = normalizeLabel(data.label);
+    var labelText = normalized === "error" ? "ERROR" : normalized.toUpperCase();
+    var confidence = Number(data.confidence || 0);
+
+    totalCount++;
+
+    if (normalized === "real") realCount++;
+    if (normalized === "fake") fakeCount++;
+    if (normalized === "filtered") filteredCount++;
 
     updateStats();
+    updateChart();
 
     var card = document.createElement("div");
-    card.className = "result-box " + colorClass;
+    card.className = "result-box " + normalized;
 
     card.innerHTML =
-        "<div class='badge'>" + label + "</div>" +
-        "<div class='progress'>" +
-        "<div class='progress-bar' style='width:" + data.confidence + "%'></div>" +
+        "<div class='result-top'>" +
+            "<div class='badge " + normalized + "'>" + labelText + "</div>" +
+            "<div class='result-confidence'>" + confidence + "%</div>" +
         "</div>" +
-        "<div style='font-size: 13px; color: var(--text-muted);'>" + data.confidence + "% confidence</div>";
+        "<div class='progress'>" +
+            "<div class='progress-bar' style='width:" + confidence + "%'></div>" +
+        "</div>" +
+        "<div class='result-note'>" +
+            "<strong>File:</strong> " + escapeHtml(fileName || "Uploaded image") +
+        "</div>" +
+        "<div class='result-note'>" +
+            "Prediction returned from your current backend without changing the detection route." +
+        "</div>";
 
-    results.appendChild(card);
+    results.prepend(card);
 
-    updateChart();
+    if (normalized === "error") {
+        addFeedItem("info", "Analysis failed", fileName || "Uploaded image");
+    } else {
+        addFeedItem(normalized, "Analysis complete: " + labelText, fileName || "Uploaded image");
+    }
 }
 
-// UPDATE STATS
 function updateStats() {
     document.getElementById("realCount").innerText = realCount;
     document.getElementById("fakeCount").innerText = fakeCount;
     document.getElementById("filteredCount").innerText = filteredCount;
+    document.getElementById("totalCount").innerText = totalCount;
+
+    document.getElementById("realCountCard").innerText = realCount;
+    document.getElementById("fakeCountCard").innerText = fakeCount;
+    document.getElementById("filteredCountCard").innerText = filteredCount;
+    document.getElementById("totalScansCard").innerText = totalCount;
 }
 
-// CHART
-var chart;
-
 function updateChart() {
-
     var data = {
         labels: ["Real", "Fake", "Filtered"],
         datasets: [{
             data: [realCount, fakeCount, filteredCount],
-            backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+            backgroundColor: ["#00ff88", "#ff4d67", "#ffb300"],
             borderWidth: 0,
             borderRadius: 8
         }]
@@ -106,56 +251,60 @@ function updateChart() {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false }
+                legend: {
+                    display: false
+                }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: { color: 'rgba(255,255,255,0.05)' },
-                    ticks: { color: '#94a3b8' }
+                    grid: {
+                        color: "rgba(255,255,255,0.06)"
+                    },
+                    ticks: {
+                        color: "#8aa8c0"
+                    }
                 },
                 x: {
-                    grid: { display: false },
-                    ticks: { color: '#94a3b8' }
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: "#8aa8c0"
+                    }
                 }
             }
         }
     });
 }
 
-// SECTION SWITCHING
-function showSection(sectionId) {
-    document.getElementById('dashboardSection').classList.add('hidden');
-    document.getElementById('newsSection').classList.add('hidden');
-    
-    // Update sidebar active state
-    const items = document.querySelectorAll('.menu .item');
-    items.forEach(item => item.classList.remove('active'));
-    
-    // Find the item that was clicked and set it active
-    if (event && event.currentTarget) {
-        event.currentTarget.classList.add('active');
-    }
+function addFeedItem(type, title, meta) {
+    var feed = document.getElementById("activityFeed");
+    if (!feed) return;
 
-    if (sectionId === 'dashboard') {
-        document.getElementById('dashboardSection').classList.remove('hidden');
-    } else if (sectionId === 'news') {
-        document.getElementById('newsSection').classList.remove('hidden');
-    }
+    var empty = feed.querySelector(".feed-empty");
+    if (empty) empty.remove();
+
+    var item = document.createElement("div");
+    item.className = "feed-item";
+
+    item.innerHTML =
+        "<div class='feed-dot " + type + "'></div>" +
+        "<div class='feed-content'>" +
+            "<div class='feed-title'>" + escapeHtml(title) + "</div>" +
+            "<div class='feed-meta'>" + escapeHtml(meta || "") + "</div>" +
+        "</div>";
+
+    feed.prepend(item);
 }
 
-// MODAL TOGGLE
-function toggleExtensionModal() {
-    document.getElementById('extensionModal').classList.toggle('hidden');
-}
-
-// NEWS GUARD ACTIONS
+// NEWS
 function verifyNewsAction() {
-    const input = document.getElementById("newsTextInput");
-    const btn = document.getElementById("verifyNewsBtn");
-    const result = document.getElementById("newsResult");
-    
-    const text = input.value.trim();
+    var input = document.getElementById("newsTextInput");
+    var btn = document.getElementById("verifyNewsBtn");
+    var result = document.getElementById("newsResult");
+
+    var text = input.value.trim();
     if (!text) {
         alert("Please enter some news text or a URL first.");
         return;
@@ -163,88 +312,115 @@ function verifyNewsAction() {
 
     btn.innerText = "Verifying coverage...";
     btn.disabled = true;
-    result.classList.remove('hidden');
-    result.innerHTML = "<p style='color: var(--primary);'>Cross-referencing with global news databases...</p>";
+
+    result.classList.remove("hidden-section");
+    result.innerHTML = "<div class='section-sub'>Cross-referencing with trusted sources...</div>";
 
     fetch("/analyze-news", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ text: text })
     })
-    .then(res => res.json())
-    .then(data => {
+    .then(function (res) {
+        return res.json();
+    })
+    .then(function (data) {
         btn.innerText = "Verify Authenticity";
         btn.disabled = false;
-        
+
         if (data.success) {
             renderNewsResult(data.result);
         } else {
-            result.innerHTML = `<p style='color: #ef4444;'>Error: ${data.error}</p>`;
+            result.innerHTML = "<div class='news-verdict-box red'><div class='news-verdict-title'>Verification Error</div><div class='news-verdict-sub'>" + escapeHtml(data.error || "Unknown error") + "</div></div>";
         }
     })
-    .catch(err => {
+    .catch(function (err) {
+        console.error(err);
         btn.innerText = "Verify Authenticity";
         btn.disabled = false;
-        result.innerHTML = `<p style='color: #ef4444;'>Failed to connect to verification server.</p>`;
-        console.error(err);
+        result.innerHTML = "<div class='news-verdict-box red'><div class='news-verdict-title'>Server Error</div><div class='news-verdict-sub'>Failed to connect to verification server.</div></div>";
     });
 }
 
 function renderNewsResult(result) {
-    const newsResult = document.getElementById("newsResult");
-    const verdict = result.verdict;
-    const color = verdict.color === 'red' ? '#ef4444' : (verdict.color === 'orange' ? '#f59e0b' : '#10b981');
-    
-    const publishers = result.uniqueSources.slice(0, 8).join(", ") || "No specific major publishers found";
-    
-    const links = result.sources.map(s => `
-        <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <a href="${s.url}" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 500; display: block; margin-bottom: 4px;">
-                ${s.title}
-            </a>
-            <div style="font-size: 12px; color: var(--text-muted);">
-                ${s.source || s.domain} ${s.publishedAt ? '• ' + s.publishedAt : ''}
-            </div>
-        </div>
-    `).join("");
+    var newsResult = document.getElementById("newsResult");
+    var verdict = result.verdict || {};
+    var verdictColor = verdict.color || "orange";
+    var verdictLabel = verdict.label || "Verification Complete";
 
-    newsResult.innerHTML = `
-        <div style="padding: 24px; border-radius: 12px; border: 2px solid ${color}; background: rgba(255,255,255,0.03);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0; color: ${color};">${verdict.label}</h3>
-                <div style="font-size: 14px; color: var(--text-muted);">${result.analyzedFromUrl ? 'URL analyzed' : 'Text analyzed'}</div>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-                <div style="padding: 16px; border-radius: 8px; background: rgba(255,255,255,0.05);">
-                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Trusted Sources</div>
-                    <div style="font-size: 24px; font-weight: 800;">${result.uniqueSourceCount}</div>
-                </div>
-                <div style="padding: 16px; border-radius: 8px; background: rgba(255,255,255,0.05);">
-                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Search Matches</div>
-                    <div style="font-size: 24px; font-weight: 800;">${result.totalMatches}</div>
-                </div>
-            </div>
+    var publishers = (result.uniqueSources || []).slice(0, 8).join(", ");
+    if (!publishers) {
+        publishers = "No specific major publishers found";
+    }
 
-            <div style="margin-bottom: 24px;">
-                <h5 style="margin: 0 0 8px 0; color: var(--text-muted); text-transform: uppercase; font-size: 11px;">Major Coverage</h5>
-                <p style="margin: 0; font-size: 14px;">${publishers}</p>
-            </div>
+    var sources = result.sources || [];
 
-            <div style="margin-bottom: 20px;">
-                <h5 style="margin: 0 0 12px 0; color: var(--text-muted); text-transform: uppercase; font-size: 11px;">Verification Links</h5>
-                <div style="max-height: 300px; overflow-y: auto; padding-right: 8px;">
-                    ${links || '<p style="font-size: 14px; color: var(--text-muted);">No direct coverage links found.</p>'}
-                </div>
-            </div>
-        </div>
-    `;
+    var links = sources.map(function (s) {
+        var title = escapeHtml(s.title || "Untitled source");
+        var url = s.url || "#";
+        var sourceName = escapeHtml(s.source || s.domain || "Unknown source");
+        var publishedAt = s.publishedAt ? " • " + escapeHtml(s.publishedAt) : "";
+
+        return (
+            "<div class='source-item'>" +
+                "<a href='" + url + "' target='_blank' rel='noopener noreferrer'>" + title + "</a>" +
+                "<div class='source-meta'>" + sourceName + publishedAt + "</div>" +
+            "</div>"
+        );
+    }).join("");
+
+    newsResult.classList.remove("hidden-section");
+    newsResult.innerHTML =
+        "<div class='news-verdict-box " + verdictColor + "'>" +
+            "<div class='news-verdict-title'>" + escapeHtml(verdictLabel) + "</div>" +
+            "<div class='news-verdict-sub'>" +
+                (result.analyzedFromUrl ? "URL analyzed" : "Text analyzed") +
+            "</div>" +
+        "</div>" +
+
+        "<div class='news-stats-grid'>" +
+            "<div class='news-stat'>" +
+                "<div class='news-stat-label'>Trusted Sources</div>" +
+                "<div class='news-stat-value'>" + Number(result.uniqueSourceCount || 0) + "</div>" +
+            "</div>" +
+            "<div class='news-stat'>" +
+                "<div class='news-stat-label'>Search Matches</div>" +
+                "<div class='news-stat-value'>" + Number(result.totalMatches || 0) + "</div>" +
+            "</div>" +
+        "</div>" +
+
+        "<div class='news-block'>" +
+            "<div class='news-block-title'>Major Coverage</div>" +
+            "<div class='news-coverage'>" + escapeHtml(publishers) + "</div>" +
+        "</div>" +
+
+        "<div class='news-block'>" +
+            "<div class='news-block-title'>Verification Links</div>" +
+            "<div class='sources-list'>" +
+                (links || "<div class='section-sub'>No direct coverage links found.</div>") +
+            "</div>" +
+        "</div>";
 }
 
 function clearNews() {
     document.getElementById("newsTextInput").value = "";
-    document.getElementById("newsResult").classList.add('hidden');
+    document.getElementById("newsResult").classList.add("hidden-section");
+    document.getElementById("newsResult").innerHTML = "";
 }
 
-// Start chart on load
-window.onload = updateChart;
+// HELPERS
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+// INIT
+window.addEventListener("load", function () {
+    updateChart();
+});
