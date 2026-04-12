@@ -1,6 +1,6 @@
-# 🛡️ DeepShield Unified - AI Media & News Integrity System
+# 🛡️ DeepShield AI - Unified Media & News Integrity System
 
-DeepShield Unified is a production-ready, full-stack AI platform designed to protect users from digital misinformation. It provides real-time detection of **AI-generated deepfakes** and **verifies news authenticity** through a seamless combination of a web dashboard and a browser extension.
+DeepShield AI is a production-ready, full-stack AI platform designed to protect users from digital misinformation. It provides real-time detection of **AI-generated images**, **deepfake audio**, and **verifies news authenticity** through a seamless combination of a web dashboard and specialized browser extensions.
 
 ---
 
@@ -9,86 +9,79 @@ DeepShield Unified is a production-ready, full-stack AI platform designed to pro
 ### 1. AI Media Detection (DeepShield)
 - **Deepfake Analysis**: Leverages a custom-trained **EfficientNet-B0** model to identify AI-generated images.
 - **Real-time Social Media Protection**: Automatically analyzes images on platforms like Instagram and overlays authenticity badges (✅ Real, 🤖 AI Generated, ✨ Filtered).
-- **Ensemble Logic**: Uses a multi-stage detection process, combining local model speed with cloud-based API fallbacks for high-confidence results.
 - **Web Dashboard**: Support for direct image uploads for deep-level forensic analysis.
 
-### 2. News Guard (VeriShield)
+### 2. Audio Guard (AudioShield 2.0)
+- **Speech Authenticity**: Detects AI-generated speech and deepfake audio using MFCC feature extraction and deep learning.
+- **Tab Capture**: Real-time scanning of audio playing in any browser tab (e.g., YouTube, Podcasts).
+- **File Analysis**: Upload MP3, WAV, or M4A files to verify their origin.
+- **Integrated Backend**: Seamlessly processes audio data through the Flask backend using specialized Python analyzers.
+
+### 3. News Guard (VeriShield)
 - **Cross-Reference Verification**: Validates news claims or URLs against a massive database of trusted global news sources.
 - **Floating Shield Tool**: A browser-native selection tool that allows users to verify any text or screen area using OCR technology.
-- **Multi-Source Corroboration**: Searches multiple news indices (Google News RSS, DuckDuckGo) to find independent reporting on a claim.
-- **Visual Verdicts**: Provides clear credibility ratings based on source count and domain reputation.
+- **Multi-Source Corroboration**: Searches multiple news indices (Google News RSS, DuckDuckGo) to find independent reporting.
 
 ---
 
 ## 🛠️ Technology Stack
 
 - **Backend**: Python (Flask, Flask-CORS)
-- **AI Engine**: PyTorch, Torchvision, OpenCV
+- **AI Engines**: 
+  - **Vision**: PyTorch, Torchvision, OpenCV
+  - **Audio**: Librosa, TensorFlow, Scikit-learn
 - **OCR**: OCR.space API / Tesseract.js
 - **Frontend**: Modern Glassmorphism UI (HTML5, CSS3, JavaScript, Chart.js)
-- **Extension**: Chrome Extension Manifest V3 (Service Workers, Content Scripts, SidePanel API)
+- **Extensions**: Chrome Extension Manifest V3 (Service Workers, Offscreen Documents, SidePanel API)
 
 ---
 
 ## 📁 Project Structure
 
 ```
-DeepShieldUnified/
+DeepShieldAI/
 ├── app.py                 # Core Flask backend server
+├── analyzer.py            # Audio deepfake analysis logic
 ├── detector/              # Image analysis & AI model logic
 ├── news_detector/         # News verification & web scraping logic
-├── extension/             # Unified Chrome Extension
-│   └── deepshield-unified/
-│       ├── manifest.json  # Manifest V3 configuration
-│       ├── background.js  # Service worker (OCR & API management)
-│       ├── content.js     # On-page image detection & selection UI
-│       └── sidepanel/     # Detailed news analysis interface
+├── unified_extension/     # Extension for AI Images & News Verification
+├── audio_extension/       # Extension for Audio Deepfake Detection
 ├── static/                # CSS (Glassmorphism), JS, and assets
 ├── templates/             # Dashboard HTML templates
-└── deepfake_model.pth     # Pre-trained EfficientNet model weights
+└── requirements.txt       # Python dependencies
 ```
 
 ---
 
 ## ⚙️ Installation & Setup
 
-### 1. Clone the Repository
+### 1. Set Up Environment
 ```bash
-git clone https://github.com/Exwhyzed-del/Aryan.git
-cd Aryan
-```
-
-### 2. Set Up Environment
-```bash
-# Create and activate virtual environment
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-
 # Install dependencies
 pip install -r requirements.txt
 ```
 
-### 3. Start the Backend Server
+### 2. Start the Backend Server
 ```bash
 python app.py
 ```
-The server will run locally at `http://127.0.0.1:5000`.
+The server will run locally at `http://localhost:5000`.
 
-### 4. Install Chrome Extension
+### 3. Install Chrome Extensions
 1. Open Google Chrome and go to `chrome://extensions/`.
 2. Enable **Developer Mode** (top-right toggle).
 3. Click **Load unpacked**.
-4. Select the `extension/deepshield-unified` folder from this repository.
+4. Select the **`unified_extension`** folder for Image/News protection.
+5. Click **Load unpacked** again and select the **`audio_extension`** folder for Audio protection.
 
 ---
 
 ## 🛡️ Usage Instructions
 
-- **Web Dashboard**: Use the sidebar to switch between the **AI Media Dashboard** (for uploads) and **News Guard** (for text/URL verification).
+- **Web Dashboard**: Open [http://localhost:5000/](http://localhost:5000/) to access the integrated console. Use the sidebar to switch between **Image Detection**, **News Guard**, and the new **Audio Guard**.
 - **Browser Protection**:
-    - **Instagram/Social Media**: Watch for the auto-generated badges on images.
-    - **Verification Button**: Use the floating 🛡️ button to select any area on a webpage for verification.
-    - **Context Menu**: Right-click any highlighted text and select **"Verify news credibility"**.
+    - **Unified Extension**: Pin the extension to your toolbar. It automatically adds badges to images and provides a right-click "Verify news" option.
+    - **Audio Extension**: Use the popup to start "Tab Capture" for live audio or upload a recording for instant analysis.
 
 ---
 

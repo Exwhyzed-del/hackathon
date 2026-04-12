@@ -7,3 +7,6 @@ numpy
 requests
 beautifulsoup4
 lxml
+librosa
+scikit-learn
+tensorflow

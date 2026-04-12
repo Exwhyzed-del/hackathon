@@ -146,6 +146,11 @@
                         <span>News Guard</span>
                     </div>
 
+                    <div class="nav-item" data-target="audioSection" onclick="showSection('audioSection', this)">
+                        <span class="nav-icon">🎙️</span>
+                        <span>Audio Guard</span>
+                    </div>
+
                     <div class="nav-item" onclick="toggleExtensionModal()">
                         <span class="nav-icon">🧩</span>
                         <span>Add to Chrome</span>
@@ -234,9 +239,9 @@
 
                             <div class="format-badges">
                                 <span class="fmt-badge">JPG</span>
-                                <span class="fmt-badge">PNG</span>
-                                <span class="fmt-badge">WEBP</span>
-                                <span class="fmt-badge">Batch Upload</span>
+                                <span class="fmt-badge"></span>
+                                <span class="fmt-badge"></span>
+                                <span class="fmt-badge"></span>
                             </div>
                         </div>
                     </div>
@@ -329,6 +334,49 @@
 
                 <div id="newsResult" class="card full-span-card hidden-section"></div>
             </div>
+
+            <!-- AUDIO -->
+            <div class="content-section hidden-section" id="audioSection">
+                <div class="topbar">
+                    <div>
+                        <div class="page-title">DeepShield <span>Audio Guard</span></div>
+                        <div class="page-subtitle">Detect AI-generated speech and deepfake audio using your integrated analyzer</div>
+                    </div>
+                    <div class="topbar-right">
+                        <div class="status-pill blue-pill">
+                            <div class="status-dot blue-dot"></div>
+                            Audio Analysis Ready
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card full-span-card">
+                    <div class="section-title">Analyze Audio Authenticity</div>
+                    <div class="section-sub">
+                        Upload an audio file (MP3, WAV, M4A) to verify if it is real or AI-generated. This uses your newly integrated
+                        <code>/analyze-audio</code> route.
+                    </div>
+
+                    <div class="upload-zone" id="audioDropArea">
+                        <div class="upload-icon">🎵</div>
+                        <div class="upload-text">Drop audio file here to analyze</div>
+                        <div class="upload-sub">Supports MP3, WAV, M4A</div>
+                        <input type="file" id="audioFileInput" hidden accept="audio/*">
+                        <button class="action-btn" onclick="openAudioFile()">Select Audio File</button>
+                    </div>
+
+                    <div id="audioAnalysisProgress" class="hidden-section">
+                        <div class="progress-container">
+                            <div class="progress-bar-label">Analyzing Audio...</div>
+                            <div class="progress-bar-bg">
+                                <div id="audioProgressBar" class="progress-bar-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="audioResult" class="hidden-section result-display"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -336,8 +384,24 @@
     <div id="extensionModal" class="modal hidden-section">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Add DeepShield to Chrome</h3>
+                <h3>Choose Extension for Installation</h3>
                 <div class="close-modal" onclick="toggleExtensionModal()">×</div>
+            </div>
+
+            <div class="extension-options">
+                <div class="extension-option-card">
+                    <div class="option-icon">🧩</div>
+                    <h4>DeepShield Unified</h4>
+                    <p>Detect AI images and verify news authenticity in real-time while browsing.</p>
+                    <div class="folder-path">Folder: <code>unified_extension</code></div>
+                </div>
+
+                <div class="extension-option-card">
+                    <div class="option-icon">🎙️</div>
+                    <h4>DeepShield Audio</h4>
+                    <p>Detect deepfake audio in your tabs or from uploaded files instantly.</p>
+                    <div class="folder-path">Folder: <code>audio_extension</code></div>
+                </div>
             </div>
 
             <div class="step-list">
@@ -353,15 +417,15 @@
                     <div class="step-num">2</div>
                     <div class="step-text">
                         <h4>Load Unpacked</h4>
-                        <p>Click Load unpacked and select the <code>extension/deepshield-unified</code> folder.</p>
+                        <p>Click <strong>Load unpacked</strong> and select either the <code>unified_extension</code> or <code>audio_extension</code> folder.</p>
                     </div>
                 </div>
 
                 <div class="step">
                     <div class="step-num">3</div>
                     <div class="step-text">
-                        <h4>Start Browsing</h4>
-                        <p>Open Instagram or any supported news site to use the extension without changing the website backend.</p>
+                        <h4>Start Analysis</h4>
+                        <p>Use the extensions to protect your digital environment from deepfakes and misinformation.</p>
                     </div>
                 </div>
             </div>

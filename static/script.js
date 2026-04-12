@@ -54,6 +54,7 @@ function updateClock() {
 function showSection(sectionId, clickedItem) {
     document.getElementById("dashboardSection").classList.add("hidden-section");
     document.getElementById("newsSection").classList.add("hidden-section");
+    document.getElementById("audioSection").classList.add("hidden-section");
 
     document.querySelectorAll(".nav-item").forEach(function (item) {
         item.classList.remove("active");
@@ -408,6 +409,93 @@ function clearNews() {
     document.getElementById("newsTextInput").value = "";
     document.getElementById("newsResult").classList.add("hidden-section");
     document.getElementById("newsResult").innerHTML = "";
+}
+
+// AUDIO
+function openAudioFile() {
+    document.getElementById("audioFileInput").click();
+}
+
+var audioFileInput = document.getElementById("audioFileInput");
+if (audioFileInput) {
+    audioFileInput.addEventListener("change", function () {
+        var file = audioFileInput.files[0];
+        if (file) {
+            analyzeAudioFile(file);
+        }
+    });
+}
+
+function analyzeAudioFile(file) {
+    var formData = new FormData();
+    formData.append("audio", file);
+
+    var progress = document.getElementById("audioAnalysisProgress");
+    var progressBar = document.getElementById("audioProgressBar");
+    var result = document.getElementById("audioResult");
+
+    progress.classList.remove("hidden-section");
+    result.classList.add("hidden-section");
+    progressBar.style.width = "0%";
+
+    // Fake progress animation
+    var width = 0;
+    var interval = setInterval(function() {
+        if (width >= 90) {
+            clearInterval(interval);
+        } else {
+            width += 5;
+            progressBar.style.width = width + "%";
+        }
+    }, 200);
+
+    fetch("/analyze-audio", {
+        method: "POST",
+        body: formData
+    })
+    .then(function (res) {
+        return res.json();
+    })
+    .then(function (data) {
+        clearInterval(interval);
+        progressBar.style.width = "100%";
+        setTimeout(function() {
+            progress.classList.add("hidden-section");
+            renderAudioResult(data, file.name);
+        }, 500);
+    })
+    .catch(function (err) {
+        clearInterval(interval);
+        console.error(err);
+        progress.classList.add("hidden-section");
+        result.classList.remove("hidden-section");
+        result.innerHTML = "<div class='news-verdict-box red'><div class='news-verdict-title'>Analysis Error</div><div class='news-verdict-sub'>Failed to analyze audio file.</div></div>";
+    });
+}
+
+function renderAudioResult(data, fileName) {
+    var result = document.getElementById("audioResult");
+    result.classList.remove("hidden-section");
+
+    var prediction = data.prediction || "unknown";
+    var confidence = Math.round((data.confidence || 0) * 100);
+    var isReal = prediction.toLowerCase() === "real";
+    var colorClass = isReal ? "green" : "red";
+    var labelText = isReal ? "VERIFIED REAL" : "AI GENERATED (DEEPFAKE)";
+
+    result.innerHTML =
+        "<div class='news-verdict-box " + colorClass + "'>" +
+            "<div class='news-verdict-title'>" + labelText + "</div>" +
+            "<div class='news-verdict-sub'>Confidence Score: " + confidence + "%</div>" +
+        "</div>" +
+        "<div class='news-block'>" +
+            "<div class='news-block-title'>File Analyzed</div>" +
+            "<div class='news-coverage'>" + escapeHtml(fileName) + "</div>" +
+        "</div>" +
+        "<div class='news-block'>" +
+            "<div class='news-block-title'>Technical Note</div>" +
+            "<div class='section-sub'>Analysis performed using MFCC feature extraction and deep learning classification.</div>" +
+        "</div>";
 }
 
 // HELPERS

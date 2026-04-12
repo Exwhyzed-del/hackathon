@@ -1198,6 +1198,94 @@ textarea:focus{
     flex-shrink:0;
 }
 
+.extension-options{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:16px;
+    margin-bottom:28px;
+}
+
+.extension-option-card{
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:20px;
+    text-align:center;
+}
+
+.option-icon{
+    font-size:28px;
+    margin-bottom:12px;
+}
+
+.extension-option-card h4{
+    margin:0 0 8px;
+    font-family:'Orbitron',monospace;
+    font-size:14px;
+    color:var(--cyan);
+}
+
+.extension-option-card p{
+    font-size:12px;
+    color:var(--text2);
+    line-height:1.5;
+    margin:0 0 12px;
+}
+
+.folder-path{
+    font-size:11px;
+    background:rgba(0,0,0,0.2);
+    padding:6px;
+    border-radius:8px;
+    color:var(--text2);
+}
+
+.folder-path code{
+    color:var(--green);
+}
+
+.progress-container{
+    margin-top:20px;
+}
+
+.progress-bar-label{
+    font-size:12px;
+    color:var(--text2);
+    margin-bottom:8px;
+    text-align:center;
+}
+
+.progress-bar-bg{
+    height:10px;
+    background:rgba(255,255,255,0.05);
+    border-radius:999px;
+    overflow:hidden;
+}
+
+.progress-bar-fill{
+    height:100%;
+    background:linear-gradient(90deg,var(--cyan),var(--green));
+    width:0%;
+    transition:width 0.3s ease;
+    box-shadow:0 0 12px rgba(0,245,255,0.4);
+}
+
+.result-display{
+    margin-top:24px;
+    padding-top:24px;
+    border-top:1px solid rgba(255,255,255,0.06);
+}
+
+.blue-pill{
+    background:rgba(0,245,255,0.08);
+    border-color:rgba(0,245,255,0.22);
+    color:var(--cyan);
+}
+
+.blue-dot{
+    background:var(--cyan);
+}
+
 .step-text h4{
     margin:0 0 4px;
     font-size:16px;
