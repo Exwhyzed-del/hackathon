@@ -2,17 +2,18 @@
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Virtual Env
 .venv/
 venv/
 ENV/
 env/
 .env
 
-# Models & Data (Large Files)
-*.pth
-*.h5
-*.weights
+# Models & Data
 temp.jpg
+# *.pth
+# *.pt
 
 # OS
 .DS_Store
@@ -22,7 +23,3 @@ Thumbs.db
 .vscode/
 .idea/
 .trae/
-
-# Extension
-extension/deepshield/
-extension/verishield/
